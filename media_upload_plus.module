@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * @file
+ *   media_upload_plus.module
+ * Project:Media upload plus
+ *  Extends media upload functionality
+ * @developers:
+ *    Gabor Szanto <hello@szantogabor.com>
+ *    http://szantogabor.com
+ *
+ */
+
+/**
+ * Implementation of hook_form_media_add_upload_alter().
+ */
+function media_upload_plus_form_media_add_upload_alter(&$form, &$form_state) {
+ global $user;
+
+  // During initial form build, add the file entity to the form state for
+  // use during form building and processing. During a rebuild, use what is in
+  // the form state.
+  if (!isset($form_state['values']['upload'])) {
+    $file->fid = NULL;
+    $file->uid = $user->uid;
+    $file->type = 'image';
+    $file->uri = NULL;
+  }
+  else {
+    $file = $form_state['values']['upload'];
+  }
+  //$form_state['values']['upload'] = $file;
+
+  $form['#validate'][] = 'media_upload_plus_add_upload_validate';
+  //$form['upload']['#parents']['upload'] = 'upload';
+  $form['upload']['#tree'] = TRUE;
+  $form['#parents'] = array('upload');
+  $form['upload']['#parents'] = array('upload');
+  field_attach_form('file', $file, $form, $form_state);
+  if (isset($form['field_old_nid'])) {
+    unset($form['field_old_nid']);
+  }
+  if (isset($form['field_old_gallery_nid'])) {
+    unset($form['field_old_gallery_nid']);
+  }
+  if (isset($form['field_old_tid'])) {
+    unset($form['field_old_tid']);
+  }
+}
+
+function media_upload_plus_add_upload_validate($form, &$form_state) {
+  foreach (element_children($form_state['values']) as $child) {
+    if (is_array($form_state['values'][$child])) {
+      $form_state['values']['upload']->$child = $form_state['values'][$child];
+      unset($form_state['values'][$child]);
+    }
+  }
+}
